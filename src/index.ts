@@ -1,11 +1,18 @@
 import { writeFileSync } from "fs";
-import { resolve } from "path";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import { parseSession } from "./parser";
 import { renderHtml } from "./renderer";
 
-const input = process.argv[2];
+const isTest = process.argv.includes("--test");
+const input = isTest
+  ? resolve(dirname(fileURLToPath(import.meta.url)), "..", "test-session.jsonl")
+  : process.argv[2];
+
 if (!input) {
-  console.error("Usage: bun run src/index.ts <path-to-dir-or-main-jsonl>");
+  console.error(
+    "Usage: bun run src/index.ts <path-to-dir-or-main-jsonl>\n       bun run src/index.ts --test"
+  );
   process.exit(1);
 }
 

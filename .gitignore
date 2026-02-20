@@ -3,3 +3,9 @@ node_modules/
 */subagents/
 session-*.html
 .DS_Store
+
+# Test fixtures (un-ignore)
+!test-session.jsonl
+!test-session/
+!test-session/subagents/
+!test-session/subagents/*.jsonl
