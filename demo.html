@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session abc123de · CC Visualizer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #09090b;
+    --surface: #18181b;
+    --surface-2: #27272a;
+    --border: #3f3f46;
+    --border-subtle: #27272a;
+    --text: #fafafa;
+    --text-2: #a1a1aa;
+    --text-3: #71717a;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --c-spawn: #4ade80;
+    --c-result: #60a5fa;
+    --c-message: #fb923c;
+    --c-shutdown: #f87171;
+    --c-team: #c084fc;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ───────────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #7c3aed, #3b82f6, #06b6d4, #4ade80);
+  }
+  .header-inner {
+    padding: 20px 28px 18px;
+    max-width: 1600px;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .app-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  header h1 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .session-id {
+    font-size: 12px;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .header-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px 4px 8px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .stat-pill .stat-icon { font-size: 10px; }
+  .stat-pill .stat-value { color: var(--text); font-weight: 600; }
+
+  /* ── Legend ───────────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    flex-wrap: wrap;
+  }
+  .legend-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  .legend-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Main ─────────────────────────────────────────────────── */
+  main { padding: 20px 28px; max-width: 1600px; }
+
+  /* ── Phase cards ──────────────────────────────────────────── */
+  .phase {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid #7c3aed;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-left-color 0.2s;
+  }
+  .phase:hover { border-left-color: #a78bfa; }
+  .phase-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .phase-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #e9d5ff;
+    flex-shrink: 0;
+  }
+  .phase-title-group { flex: 1; }
+  .phase-title-group h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+    margin-bottom: 5px;
+  }
+  .phase-meta {
+    display: flex;
+    gap: 8px;
+  }
+  .meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-3);
+    background: var(--surface-2);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .meta-icon { font-size: 9px; }
+  .diagram-container {
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+  .diagram-container svg { display: block; }
+
+  /* ── SVG hover ────────────────────────────────────────────── */
+  .evt-row .row-bg { transition: fill 0.1s; }
+  .evt-row:hover .row-bg { fill: rgba(167,139,250,0.07) !important; }
+
+  /* ── Detail panel ─────────────────────────────────────────── */
+  #detail-panel {
+    position: fixed;
+    top: 0;
+    right: -460px;
+    width: 460px;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    transition: right 0.28s cubic-bezier(0.16,1,0.3,1);
+    z-index: 100;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+  #detail-panel.open { right: 0; }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .panel-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #panel-type-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  #panel-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .close-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  .close-btn:hover { background: var(--surface-2); color: var(--text); }
+
+  .panel-body { padding: 16px 20px; flex: 1; }
+
+  .detail-field { margin-bottom: 14px; }
+  .detail-field .label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+  }
+  .detail-field .value {
+    color: var(--text-2);
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--bg);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    max-height: 280px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+  .detail-field .value.highlighted { color: var(--text); }
+
+  /* JSON syntax highlighting */
+  .json-key { color: #c084fc; }
+  .json-str { color: #86efac; }
+  .json-num { color: #fb923c; }
+  .json-bool { color: #60a5fa; }
+  .json-null { color: #71717a; }
+
+  /* ── Empty state ──────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="app-icon">◈</div>
+      <h1>CC Session Visualizer</h1>
+      <span class="session-id">abc123de&hellip;</span>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill">
+        <span class="stat-icon">⏱</span>
+        <span>Duration</span>
+        <span class="stat-value">8m 47s</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">◈</span>
+        <span>Agents</span>
+        <span class="stat-value">4</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">⇄</span>
+        <span>Events</span>
+        <span class="stat-value">17</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">▤</span>
+        <span>Phases</span>
+        <span class="stat-value">3</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="legend-label">Event types</span>
+  <div class="legend-pill" style="color:var(--c-spawn);border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.08)">
+    <div class="legend-dot" style="background:var(--c-spawn)"></div>Spawn
+  </div>
+  <div class="legend-pill" style="color:var(--c-result);border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.08)">
+    <div class="legend-dot" style="background:var(--c-result)"></div>Result
+  </div>
+  <div class="legend-pill" style="color:var(--c-message);border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.08)">
+    <div class="legend-dot" style="background:var(--c-message)"></div>Message
+  </div>
+  <div class="legend-pill" style="color:var(--c-shutdown);border-color:rgba(248,113,113,0.3);background:rgba(248,113,113,0.08)">
+    <div class="legend-dot" style="background:var(--c-shutdown)"></div>Shutdown
+  </div>
+  <div class="legend-pill" style="color:var(--c-team);border-color:rgba(192,132,252,0.3);background:rgba(192,132,252,0.08)">
+    <div class="legend-dot" style="background:var(--c-team)"></div>Team op
+  </div>
+</div>
+
+<main>
+
+    <section class="phase">
+      <div class="phase-header">
+        <div class="phase-badge">1</div>
+        <div class="phase-title-group">
+          <h2>Phase 1: Exploration &amp; Planning</h2>
+          <div class="phase-meta">
+            <span class="meta-chip"><span class="meta-icon">◈</span>3 participants</span>
+            <span class="meta-chip"><span class="meta-icon">⇄</span>5 events</span>
+          </div>
+        </div>
+      </div>
+      <div class="diagram-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="788" height="450" viewBox="0 0 788 450">
+<defs>
+<marker id="ah-spawn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#4ade80" opacity="0.9"/></marker>
+<marker id="ah-result" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa" opacity="0.9"/></marker>
+<marker id="ah-message" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" opacity="0.9"/></marker>
+<marker id="ah-shutdown" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#f87171" opacity="0.9"/></marker>
+<marker id="ah-team_create" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#c084fc" opacity="0.9"/></marker>
+<marker id="ah-team_delete" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#c084fc" opacity="0.9"/></marker>
+<linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#18181b"/><stop offset="100%" stop-color="#101014"/></linearGradient>
+<linearGradient id="host-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0c1e36"/><stop offset="100%" stop-color="#07111f"/></linearGradient>
+<linearGradient id="agent-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#130c28"/><stop offset="100%" stop-color="#0b0719"/></linearGradient>
+<filter id="row-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+</defs>
+<rect width="788" height="450" fill="url(#bg-grad)" rx="10"/>
+<line x1="284" y1="94" x2="284" y2="422" stroke="#27272a" stroke-width="1" stroke-dasharray="1,3"/>
+<line x1="504" y1="94" x2="504" y2="422" stroke="#27272a" stroke-width="1" stroke-dasharray="1,3"/>
+<rect x="78" y="31" width="196" height="58" rx="8" fill="#3b82f6" opacity="0.12"/>
+<rect x="76" y="28" width="196" height="58" rx="8" fill="url(#host-grad)" stroke="#3b82f6" stroke-width="1.5"/>
+<line x1="84" y1="28" x2="264" y2="28" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="174" y="52" text-anchor="middle" fill="#e0f2fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">host</text>
+<rect x="155" y="60" width="38" height="16" rx="4" fill="#3b82f6" opacity="0.2"/>
+<text x="174" y="71" text-anchor="middle" fill="#7dd3fc" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">host</text>
+<rect x="298" y="31" width="196" height="58" rx="8" fill="#7c3aed" opacity="0.12"/>
+<rect x="296" y="28" width="196" height="58" rx="8" fill="url(#agent-grad)" stroke="#7c3aed" stroke-width="1.5"/>
+<line x1="304" y1="28" x2="484" y2="28" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="394" y="52" text-anchor="middle" fill="#ede9fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">Explore</text>
+<rect x="365.25" y="60" width="57.5" height="16" rx="4" fill="#7c3aed" opacity="0.2"/>
+<text x="394" y="71" text-anchor="middle" fill="#c4b5fd" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">Explore</text>
+<rect x="518" y="31" width="196" height="58" rx="8" fill="#7c3aed" opacity="0.12"/>
+<rect x="516" y="28" width="196" height="58" rx="8" fill="url(#agent-grad)" stroke="#7c3aed" stroke-width="1.5"/>
+<line x1="524" y1="28" x2="704" y2="28" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="614" y="52" text-anchor="middle" fill="#ede9fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">Plan</text>
+<rect x="595" y="60" width="38" height="16" rx="4" fill="#7c3aed" opacity="0.2"/>
+<text x="614" y="71" text-anchor="middle" fill="#c4b5fd" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">Plan</text>
+<line x1="174" y1="104" x2="174" y2="422" stroke="#3b82f6" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<line x1="394" y1="104" x2="394" y2="422" stroke="#7c3aed" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<line x1="614" y1="104" x2="614" y2="422" stroke="#7c3aed" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<g class="evt-row" data-type="spawn" data-detail="{&quot;task&quot;:&quot;Explore the repository structure and identify key source files&quot;,&quot;background&quot;:false,&quot;tool_use_id&quot;:&quot;toolu_01ABC123&quot;}" data-from="host" data-to="Explore" data-ts="2024-06-15T10:00:01.120Z" data-label="spawn:Explore" style="cursor:pointer">
+<rect x="0" y="104" width="788" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="135" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">1</text>
+<text x="58" y="135" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:00:01</text>
+<line x1="182" y1="131" x2="380" y2="131" stroke="#4ade80" stroke-width="1.8" marker-end="url(#ah-spawn)" opacity="0.9"/>
+<rect x="234" y="110" width="94" height="16" rx="4" fill="#4ade80" opacity="0.12"/>
+<text x="281" y="122" text-anchor="middle" fill="#4ade80" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">spawn:Explore</text>
+</g>
+<g class="evt-row" data-type="message" data-detail="{&quot;content&quot;:&quot;Scanning directory tree...&quot;,&quot;files_found&quot;:24}" data-from="Explore" data-to="host" data-ts="2024-06-15T10:00:08.440Z" data-label="progress" style="cursor:pointer">
+<rect x="0" y="158" width="788" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="189" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">2</text>
+<text x="58" y="189" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:00:08</text>
+<line x1="386" y1="185" x2="188" y2="185" stroke="#fb923c" stroke-width="1.8" marker-end="url(#ah-message)" opacity="0.9"/>
+<rect x="255" y="164" width="64" height="16" rx="4" fill="#fb923c" opacity="0.12"/>
+<text x="287" y="176" text-anchor="middle" fill="#fb923c" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">progress</text>
+</g>
+<g class="evt-row" data-type="result" data-detail="{&quot;files&quot;:[&quot;src/index.ts&quot;,&quot;src/parser.ts&quot;,&quot;src/renderer.ts&quot;,&quot;src/types.ts&quot;],&quot;summary&quot;:&quot;Found 4 source files. Main entry at src/index.ts.&quot;,&quot;duration_ms&quot;:21770}" data-from="Explore" data-to="host" data-ts="2024-06-15T10:00:22.890Z" data-label="result:Explore" style="cursor:pointer">
+<rect x="0" y="212" width="788" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="243" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">3</text>
+<text x="58" y="243" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:00:22</text>
+<line x1="386" y1="239" x2="188" y2="239" stroke="#60a5fa" stroke-width="1.8" marker-end="url(#ah-result)" opacity="0.9"/>
+<rect x="237" y="218" width="100" height="16" rx="4" fill="#60a5fa" opacity="0.12"/>
+<text x="287" y="230" text-anchor="middle" fill="#60a5fa" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">result:Explore</text>
+</g>
+<g class="evt-row" data-type="spawn" data-detail="{&quot;task&quot;:&quot;Create implementation plan for improving visual output of the session visualizer&quot;,&quot;background&quot;:false,&quot;context&quot;:[&quot;src/renderer.ts&quot;,&quot;src/types.ts&quot;]}" data-from="host" data-to="Plan" data-ts="2024-06-15T10:00:25.010Z" data-label="spawn:Plan" style="cursor:pointer">
+<rect x="0" y="266" width="788" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="297" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">4</text>
+<text x="58" y="297" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:00:25</text>
+<line x1="182" y1="293" x2="600" y2="293" stroke="#4ade80" stroke-width="1.8" marker-end="url(#ah-spawn)" opacity="0.9"/>
+<rect x="353" y="272" width="76" height="16" rx="4" fill="#4ade80" opacity="0.12"/>
+<text x="391" y="284" text-anchor="middle" fill="#4ade80" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">spawn:Plan</text>
+</g>
+<g class="evt-row" data-type="result" data-detail="{&quot;steps&quot;:5,&quot;plan&quot;:&quot;1. Redesign CSS with CSS variables\n2. Improve SVG agent boxes\n3. Add pill-style legend\n4. Enhance detail panel\n5. Add JSON syntax highlighting&quot;,&quot;estimated_effort&quot;:&quot;medium&quot;}" data-from="Plan" data-to="host" data-ts="2024-06-15T10:01:14.230Z" data-label="result:Plan" style="cursor:pointer">
+<rect x="0" y="320" width="788" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="351" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">5</text>
+<text x="58" y="351" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:01:14</text>
+<line x1="606" y1="347" x2="188" y2="347" stroke="#60a5fa" stroke-width="1.8" marker-end="url(#ah-result)" opacity="0.9"/>
+<rect x="356" y="326" width="82" height="16" rx="4" fill="#60a5fa" opacity="0.12"/>
+<text x="397" y="338" text-anchor="middle" fill="#60a5fa" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">result:Plan</text>
+</g>
+</svg>
+      </div>
+    </section>
+
+    <section class="phase">
+      <div class="phase-header">
+        <div class="phase-badge">2</div>
+        <div class="phase-title-group">
+          <h2>Phase 2: Implementation</h2>
+          <div class="phase-meta">
+            <span class="meta-chip"><span class="meta-icon">◈</span>3 participants</span>
+            <span class="meta-chip"><span class="meta-icon">⇄</span>6 events</span>
+          </div>
+        </div>
+      </div>
+      <div class="diagram-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="788" height="504" viewBox="0 0 788 504">
+<defs>
+<marker id="ah-spawn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#4ade80" opacity="0.9"/></marker>
+<marker id="ah-result" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa" opacity="0.9"/></marker>
+<marker id="ah-message" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" opacity="0.9"/></marker>
+<marker id="ah-shutdown" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#f87171" opacity="0.9"/></marker>
+<marker id="ah-team_create" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#c084fc" opacity="0.9"/></marker>
+<marker id="ah-team_delete" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#c084fc" opacity="0.9"/></marker>
+<linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#18181b"/><stop offset="100%" stop-color="#101014"/></linearGradient>
+<linearGradient id="host-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0c1e36"/><stop offset="100%" stop-color="#07111f"/></linearGradient>
+<linearGradient id="agent-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#130c28"/><stop offset="100%" stop-color="#0b0719"/></linearGradient>
+<filter id="row-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+</defs>
+<rect width="788" height="504" fill="url(#bg-grad)" rx="10"/>
+<line x1="284" y1="94" x2="284" y2="476" stroke="#27272a" stroke-width="1" stroke-dasharray="1,3"/>
+<line x1="504" y1="94" x2="504" y2="476" stroke="#27272a" stroke-width="1" stroke-dasharray="1,3"/>
+<rect x="78" y="31" width="196" height="58" rx="8" fill="#3b82f6" opacity="0.12"/>
+<rect x="76" y="28" width="196" height="58" rx="8" fill="url(#host-grad)" stroke="#3b82f6" stroke-width="1.5"/>
+<line x1="84" y1="28" x2="264" y2="28" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="174" y="52" text-anchor="middle" fill="#e0f2fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">host</text>
+<rect x="155" y="60" width="38" height="16" rx="4" fill="#3b82f6" opacity="0.2"/>
+<text x="174" y="71" text-anchor="middle" fill="#7dd3fc" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">host</text>
+<rect x="298" y="31" width="196" height="58" rx="8" fill="#7c3aed" opacity="0.12"/>
+<rect x="296" y="28" width="196" height="58" rx="8" fill="url(#agent-grad)" stroke="#7c3aed" stroke-width="1.5"/>
+<line x1="304" y1="28" x2="484" y2="28" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="394" y="52" text-anchor="middle" fill="#ede9fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">general-purpo…</text>
+<rect x="339.25" y="60" width="109.5" height="16" rx="4" fill="#7c3aed" opacity="0.2"/>
+<text x="394" y="71" text-anchor="middle" fill="#c4b5fd" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">general-purpose</text>
+<rect x="518" y="31" width="196" height="58" rx="8" fill="#7c3aed" opacity="0.12"/>
+<rect x="516" y="28" width="196" height="58" rx="8" fill="url(#agent-grad)" stroke="#7c3aed" stroke-width="1.5"/>
+<line x1="524" y1="28" x2="704" y2="28" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="614" y="52" text-anchor="middle" fill="#ede9fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">Bash</text>
+<rect x="595" y="60" width="38" height="16" rx="4" fill="#7c3aed" opacity="0.2"/>
+<text x="614" y="71" text-anchor="middle" fill="#c4b5fd" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">Bash</text>
+<line x1="174" y1="104" x2="174" y2="476" stroke="#3b82f6" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<line x1="394" y1="104" x2="394" y2="476" stroke="#7c3aed" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<line x1="614" y1="104" x2="614" y2="476" stroke="#7c3aed" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<g class="evt-row" data-type="spawn" data-detail="{&quot;task&quot;:&quot;Rewrite renderer.ts with improved CSS design system and SVG enhancements&quot;,&quot;background&quot;:false,&quot;files_to_edit&quot;:[&quot;src/renderer.ts&quot;]}" data-from="host" data-to="general-purpose" data-ts="2024-06-15T10:01:18.100Z" data-label="spawn:impl" style="cursor:pointer">
+<rect x="0" y="104" width="788" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="135" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">1</text>
+<text x="58" y="135" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:01:18</text>
+<line x1="182" y1="131" x2="380" y2="131" stroke="#4ade80" stroke-width="1.8" marker-end="url(#ah-spawn)" opacity="0.9"/>
+<rect x="243" y="110" width="76" height="16" rx="4" fill="#4ade80" opacity="0.12"/>
+<text x="281" y="122" text-anchor="middle" fill="#4ade80" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">spawn:impl</text>
+</g>
+<g class="evt-row" data-type="spawn" data-detail="{&quot;task&quot;:&quot;Run TypeScript type check&quot;,&quot;command&quot;:&quot;bun tsc --noEmit&quot;,&quot;background&quot;:true}" data-from="general-purpose" data-to="Bash" data-ts="2024-06-15T10:01:45.330Z" data-label="spawn:Bash" style="cursor:pointer">
+<rect x="0" y="158" width="788" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="189" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">2</text>
+<text x="58" y="189" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:01:45</text>
+<line x1="402" y1="185" x2="600" y2="185" stroke="#4ade80" stroke-width="1.8" marker-end="url(#ah-spawn)" opacity="0.9"/>
+<rect x="463" y="164" width="76" height="16" rx="4" fill="#4ade80" opacity="0.12"/>
+<text x="501" y="176" text-anchor="middle" fill="#4ade80" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">spawn:Bash</text>
+</g>
+<g class="evt-row" data-type="message" data-detail="{&quot;output&quot;:&quot;No type errors found.&quot;,&quot;exit_code&quot;:0}" data-from="Bash" data-to="general-purpose" data-ts="2024-06-15T10:02:01.780Z" data-label="stdout" style="cursor:pointer">
+<rect x="0" y="212" width="788" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="243" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">3</text>
+<text x="58" y="243" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:02:01</text>
+<line x1="606" y1="239" x2="408" y2="239" stroke="#fb923c" stroke-width="1.8" marker-end="url(#ah-message)" opacity="0.9"/>
+<rect x="481" y="218" width="52" height="16" rx="4" fill="#fb923c" opacity="0.12"/>
+<text x="507" y="230" text-anchor="middle" fill="#fb923c" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">stdout</text>
+</g>
+<g class="evt-row" data-type="result" data-detail="{&quot;success&quot;:true,&quot;duration_ms&quot;:16770}" data-from="Bash" data-to="general-purpose" data-ts="2024-06-15T10:02:02.100Z" data-label="result:Bash" style="cursor:pointer">
+<rect x="0" y="266" width="788" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="297" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">4</text>
+<text x="58" y="297" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:02:02</text>
+<line x1="606" y1="293" x2="408" y2="293" stroke="#60a5fa" stroke-width="1.8" marker-end="url(#ah-result)" opacity="0.9"/>
+<rect x="466" y="272" width="82" height="16" rx="4" fill="#60a5fa" opacity="0.12"/>
+<text x="507" y="284" text-anchor="middle" fill="#60a5fa" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">result:Bash</text>
+</g>
+<g class="evt-row" data-type="message" data-detail="{&quot;message&quot;:&quot;CSS variables defined, SVG improvements in progress...&quot;,&quot;percent_complete&quot;:60}" data-from="general-purpose" data-to="host" data-ts="2024-06-15T10:03:12.440Z" data-label="progress" style="cursor:pointer">
+<rect x="0" y="320" width="788" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="351" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">5</text>
+<text x="58" y="351" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:03:12</text>
+<line x1="386" y1="347" x2="188" y2="347" stroke="#fb923c" stroke-width="1.8" marker-end="url(#ah-message)" opacity="0.9"/>
+<rect x="255" y="326" width="64" height="16" rx="4" fill="#fb923c" opacity="0.12"/>
+<text x="287" y="338" text-anchor="middle" fill="#fb923c" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">progress</text>
+</g>
+<g class="evt-row" data-type="result" data-detail="{&quot;files_changed&quot;:[&quot;src/renderer.ts&quot;],&quot;lines_added&quot;:280,&quot;lines_removed&quot;:110,&quot;summary&quot;:&quot;Renderer redesigned with zinc palette, CSS variables, improved SVG headers and arrows, pill legend, better detail panel.&quot;}" data-from="general-purpose" data-to="host" data-ts="2024-06-15T10:05:33.900Z" data-label="result:impl" style="cursor:pointer">
+<rect x="0" y="374" width="788" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="405" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">6</text>
+<text x="58" y="405" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:05:33</text>
+<line x1="386" y1="401" x2="188" y2="401" stroke="#60a5fa" stroke-width="1.8" marker-end="url(#ah-result)" opacity="0.9"/>
+<rect x="246" y="380" width="82" height="16" rx="4" fill="#60a5fa" opacity="0.12"/>
+<text x="287" y="392" text-anchor="middle" fill="#60a5fa" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">result:impl</text>
+</g>
+</svg>
+      </div>
+    </section>
+
+    <section class="phase">
+      <div class="phase-header">
+        <div class="phase-badge">3</div>
+        <div class="phase-title-group">
+          <h2>Phase 3: Verification &amp; Commit</h2>
+          <div class="phase-meta">
+            <span class="meta-chip"><span class="meta-icon">◈</span>2 participants</span>
+            <span class="meta-chip"><span class="meta-icon">⇄</span>6 events</span>
+          </div>
+        </div>
+      </div>
+      <div class="diagram-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="568" height="504" viewBox="0 0 568 504">
+<defs>
+<marker id="ah-spawn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#4ade80" opacity="0.9"/></marker>
+<marker id="ah-result" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa" opacity="0.9"/></marker>
+<marker id="ah-message" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" opacity="0.9"/></marker>
+<marker id="ah-shutdown" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#f87171" opacity="0.9"/></marker>
+<marker id="ah-team_create" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#c084fc" opacity="0.9"/></marker>
+<marker id="ah-team_delete" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#c084fc" opacity="0.9"/></marker>
+<linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#18181b"/><stop offset="100%" stop-color="#101014"/></linearGradient>
+<linearGradient id="host-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0c1e36"/><stop offset="100%" stop-color="#07111f"/></linearGradient>
+<linearGradient id="agent-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#130c28"/><stop offset="100%" stop-color="#0b0719"/></linearGradient>
+<filter id="row-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+</defs>
+<rect width="568" height="504" fill="url(#bg-grad)" rx="10"/>
+<line x1="284" y1="94" x2="284" y2="476" stroke="#27272a" stroke-width="1" stroke-dasharray="1,3"/>
+<rect x="78" y="31" width="196" height="58" rx="8" fill="#3b82f6" opacity="0.12"/>
+<rect x="76" y="28" width="196" height="58" rx="8" fill="url(#host-grad)" stroke="#3b82f6" stroke-width="1.5"/>
+<line x1="84" y1="28" x2="264" y2="28" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="174" y="52" text-anchor="middle" fill="#e0f2fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">host</text>
+<rect x="155" y="60" width="38" height="16" rx="4" fill="#3b82f6" opacity="0.2"/>
+<text x="174" y="71" text-anchor="middle" fill="#7dd3fc" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">host</text>
+<rect x="298" y="31" width="196" height="58" rx="8" fill="#7c3aed" opacity="0.12"/>
+<rect x="296" y="28" width="196" height="58" rx="8" fill="url(#agent-grad)" stroke="#7c3aed" stroke-width="1.5"/>
+<line x1="304" y1="28" x2="484" y2="28" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<text x="394" y="52" text-anchor="middle" fill="#ede9fe" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="12" font-weight="700" letter-spacing="0.3">Bash</text>
+<rect x="375" y="60" width="38" height="16" rx="4" fill="#7c3aed" opacity="0.2"/>
+<text x="394" y="71" text-anchor="middle" fill="#c4b5fd" font-family="'SF Mono','Cascadia Code','Fira Code',monospace" font-size="9" font-weight="600" letter-spacing="0.5">Bash</text>
+<line x1="174" y1="104" x2="174" y2="476" stroke="#3b82f6" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<line x1="394" y1="104" x2="394" y2="476" stroke="#7c3aed" stroke-width="1" stroke-dasharray="5,5" opacity="0.3"/>
+<g class="evt-row" data-type="spawn" data-detail="{&quot;task&quot;:&quot;Run build and commit changes&quot;,&quot;background&quot;:false}" data-from="host" data-to="Bash" data-ts="2024-06-15T10:05:40.000Z" data-label="spawn:verify" style="cursor:pointer">
+<rect x="0" y="104" width="568" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="135" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">1</text>
+<text x="58" y="135" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:05:40</text>
+<line x1="182" y1="131" x2="380" y2="131" stroke="#4ade80" stroke-width="1.8" marker-end="url(#ah-spawn)" opacity="0.9"/>
+<rect x="237" y="110" width="88" height="16" rx="4" fill="#4ade80" opacity="0.12"/>
+<text x="281" y="122" text-anchor="middle" fill="#4ade80" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">spawn:verify</text>
+</g>
+<g class="evt-row" data-type="message" data-detail="{&quot;command&quot;:&quot;bun build src/index.ts&quot;,&quot;output&quot;:&quot;Build complete. 0 errors.&quot;}" data-from="Bash" data-to="host" data-ts="2024-06-15T10:05:55.100Z" data-label="build" style="cursor:pointer">
+<rect x="0" y="158" width="568" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="189" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">2</text>
+<text x="58" y="189" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:05:55</text>
+<line x1="386" y1="185" x2="188" y2="185" stroke="#fb923c" stroke-width="1.8" marker-end="url(#ah-message)" opacity="0.9"/>
+<rect x="264" y="164" width="46" height="16" rx="4" fill="#fb923c" opacity="0.12"/>
+<text x="287" y="176" text-anchor="middle" fill="#fb923c" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">build</text>
+</g>
+<g class="evt-row" data-type="message" data-detail="{&quot;command&quot;:&quot;git add src/renderer.ts src/test-render.ts&quot;}" data-from="Bash" data-to="Bash" data-ts="2024-06-15T10:06:02.300Z" data-label="git:add" style="cursor:pointer">
+<rect x="0" y="212" width="568" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="243" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">3</text>
+<text x="58" y="243" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:06:02</text>
+<path d="M 394 231 C 444 221, 444 249, 394 247" fill="none" stroke="#fb923c" stroke-width="1.5" opacity="0.85"/>
+<rect x="446" y="230" width="58" height="16" rx="4" fill="#fb923c" opacity="0.15"/>
+<text x="475" y="242" text-anchor="middle" fill="#fb923c" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">git:add</text>
+</g>
+<g class="evt-row" data-type="message" data-detail="{&quot;commit&quot;:&quot;feat: redesign renderer with modern zinc dark theme&quot;,&quot;sha&quot;:&quot;d4e5f6a&quot;}" data-from="Bash" data-to="host" data-ts="2024-06-15T10:06:08.700Z" data-label="git:commit" style="cursor:pointer">
+<rect x="0" y="266" width="568" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="297" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">4</text>
+<text x="58" y="297" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:06:08</text>
+<line x1="386" y1="293" x2="188" y2="293" stroke="#fb923c" stroke-width="1.8" marker-end="url(#ah-message)" opacity="0.9"/>
+<rect x="249" y="272" width="76" height="16" rx="4" fill="#fb923c" opacity="0.12"/>
+<text x="287" y="284" text-anchor="middle" fill="#fb923c" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">git:commit</text>
+</g>
+<g class="evt-row" data-type="shutdown" data-detail="{&quot;reason&quot;:&quot;task complete&quot;,&quot;exit_code&quot;:0}" data-from="Bash" data-to="host" data-ts="2024-06-15T10:06:10.000Z" data-label="shutdown" style="cursor:pointer">
+<rect x="0" y="320" width="568" height="54" fill="rgba(255,255,255,0.015)" class="row-bg"/>
+<text x="8" y="351" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">5</text>
+<text x="58" y="351" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:06:10</text>
+<line x1="386" y1="347" x2="188" y2="347" stroke="#f87171" stroke-width="1.8" marker-end="url(#ah-shutdown)" opacity="0.9"/>
+<rect x="255" y="326" width="64" height="16" rx="4" fill="#f87171" opacity="0.12"/>
+<text x="287" y="338" text-anchor="middle" fill="#f87171" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">shutdown</text>
+</g>
+<g class="evt-row" data-type="shutdown" data-detail="{&quot;total_agents_used&quot;:4,&quot;total_events&quot;:17,&quot;success&quot;:true}" data-from="host" data-to="host" data-ts="2024-06-15T10:06:12.000Z" data-label="session end" style="cursor:pointer">
+<rect x="0" y="374" width="568" height="54" fill="transparent" class="row-bg"/>
+<text x="8" y="405" fill="#52525b" font-family="monospace" font-size="8" text-anchor="start">6</text>
+<text x="58" y="405" fill="#52525b" font-family="'SF Mono','Cascadia Code',monospace" font-size="9" text-anchor="end">10:06:12</text>
+<path d="M 174 393 C 224 383, 224 411, 174 409" fill="none" stroke="#f87171" stroke-width="1.5" opacity="0.85"/>
+<rect x="226" y="392" width="82" height="16" rx="4" fill="#f87171" opacity="0.15"/>
+<text x="267" y="404" text-anchor="middle" fill="#f87171" font-family="'SF Mono','Cascadia Code',monospace" font-size="10" font-weight="600">session end</text>
+</g>
+</svg>
+      </div>
+    </section>
+</main>
+
+<aside id="detail-panel">
+  <div class="panel-header">
+    <div class="panel-title-row">
+      <span id="panel-type-badge"></span>
+      <h3 id="panel-title">Event Detail</h3>
+    </div>
+    <button class="close-btn" id="close-panel">&times;</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</aside>
+
+<script>
+(function() {
+  const panel = document.getElementById('detail-panel');
+  const panelBody = document.getElementById('panel-body');
+  const panelTitle = document.getElementById('panel-title');
+  const panelBadge = document.getElementById('panel-type-badge');
+  const closeBtn = document.getElementById('close-panel');
+
+  const TYPE_COLORS = {
+    spawn: { color: '#4ade80', bg: 'rgba(74,222,128,0.12)', border: 'rgba(74,222,128,0.35)' },
+    result: { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.35)' },
+    message: { color: '#fb923c', bg: 'rgba(251,146,60,0.12)', border: 'rgba(251,146,60,0.35)' },
+    shutdown: { color: '#f87171', bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.35)' },
+    team_create: { color: '#c084fc', bg: 'rgba(192,132,252,0.12)', border: 'rgba(192,132,252,0.35)' },
+    team_delete: { color: '#c084fc', bg: 'rgba(192,132,252,0.12)', border: 'rgba(192,132,252,0.35)' },
+  };
+
+  closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') panel.classList.remove('open');
+  });
+
+  document.querySelectorAll('.evt-row').forEach(g => {
+    g.addEventListener('click', () => {
+      const type = g.dataset.type || '';
+      const from = g.dataset.from || '';
+      const to = g.dataset.to || '';
+      const ts = g.dataset.ts || '';
+      const label = g.dataset.label || '';
+      let detail = {};
+      try {
+        const raw = g.dataset.detail
+          .replace(/&quot;/g, '"').replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+        detail = JSON.parse(raw);
+      } catch(e) {}
+
+      const tc = TYPE_COLORS[type] || { color: '#a1a1aa', bg: 'rgba(161,161,170,0.1)', border: 'rgba(161,161,170,0.3)' };
+      panelBadge.textContent = type.replace('_', ' ').toUpperCase();
+      panelBadge.style.color = tc.color;
+      panelBadge.style.background = tc.bg;
+      panelBadge.style.borderColor = tc.border;
+
+      panelTitle.textContent = 'Event Detail';
+
+      let html = '';
+      html += field('From', from, false);
+      html += field('To', to, false);
+      html += field('Timestamp', ts, false);
+      html += field('Label', label, false);
+
+      for (const [k, v] of Object.entries(detail)) {
+        if (v !== null && v !== undefined && v !== '') {
+          const isJson = typeof v !== 'string';
+          html += field(k, isJson ? JSON.stringify(v, null, 2) : v, isJson);
+        }
+      }
+
+      panelBody.innerHTML = html || '<div class="empty-state"><div class="empty-icon">◈</div>No detail available</div>';
+      panel.classList.add('open');
+    });
+  });
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function highlightJson(str) {
+    return esc(str)
+      .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+      .replace(/: "([^"]*)"/g, ': <span class="json-str">"$1"</span>')
+      .replace(/: (-?d+.?d*)/g, ': <span class="json-num">$1</span>')
+      .replace(/: (true|false)/g, ': <span class="json-bool">$1</span>')
+      .replace(/: null/g, ': <span class="json-null">null</span>');
+  }
+
+  function field(label, value, isCode) {
+    const content = isCode
+      ? '<div class="value highlighted">' + highlightJson(String(value)) + '</div>'
+      : '<div class="value">' + esc(value) + '</div>';
+    return '<div class="detail-field"><div class="label">' + esc(label) + '</div>' + content + '</div>';
+  }
+})();
+</script>
+
+</body>
+</html>
