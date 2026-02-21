@@ -186,14 +186,14 @@ function renderPhaseSvg(phase: Phase): string {
         if (isMsg) {
           const summary = String((evt.detail as any)?.summary ?? "");
           const content = String((evt.detail as any)?.content ?? "");
-          const preview = content.length > 120 ? content.slice(0, 117) + "..." : content;
+          const preview = content;
 
           const leftCol = Math.min(fromCol, toCol);
           const rightCol = Math.max(fromCol, toCol);
           const bubbleX = PAD_X + leftCol * COL_W + COL_W / 2 + 12;
           const bubbleW = (rightCol - leftCol) * COL_W - 24;
           const bubbleY = arrowY + 6;
-          const bubbleH = 52;
+          const bubbleH = 62;
           const bgColor = isBroadcast ? "#fef9c3" : "#f3f4f6";
           const borderColor = isBroadcast ? "#fbbf24" : "#e5e7eb";
 
@@ -202,11 +202,11 @@ function renderPhaseSvg(phase: Phase): string {
               `<div xmlns="http://www.w3.org/1999/xhtml" style="` +
               `font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; ` +
               `background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 6px; ` +
-              `padding: 6px 10px; overflow: hidden; height: ${bubbleH - 2}px;">` +
+              `padding: 6px 10px; overflow: hidden;">` +
               (summary
                 ? `<div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escHtml(summary)}</div>`
                 : "") +
-              `<div style="font-size: 10px; color: #6b7280; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${escHtml(preview)}</div>` +
+              `<div style="font-size: 10px; color: #6b7280; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: ellipsis;">${escHtml(preview)}</div>` +
               `</div></foreignObject>`
           );
         }
