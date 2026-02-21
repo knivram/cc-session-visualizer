@@ -122,7 +122,7 @@ export function parseSession(inputPath: string): Session {
         subagentType: input.subagent_type ?? "unknown",
         name: input.name,
         teamName: input.team_name,
-        prompt: (input.prompt ?? "").slice(0, 500),
+        prompt: input.prompt ?? "",
         runInBackground: !!input.run_in_background,
         taskId: toolUseToTask.get(block.id),
       };
@@ -297,7 +297,7 @@ export function parseSession(inputPath: string): Session {
         detail: {
           messageType: msgType,
           recipient,
-          content: (input.content ?? "").slice(0, 1000),
+          content: input.content ?? "",
           summary: input.summary,
         },
         toolUseId: block.id,
@@ -358,7 +358,7 @@ export function parseSession(inputPath: string): Session {
               sender: senderName,
               recipient,
               messageType: input.type,
-              content: (input.content ?? "").slice(0, 1000),
+              content: input.content ?? "",
               summary: input.summary,
             },
             toolUseId: block.id,
