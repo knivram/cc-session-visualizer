@@ -745,19 +745,19 @@ ${phaseSections}
 
         panelBody.innerHTML = html;
 
-        // Thread entry click → scroll to that row in SVG
+        // Thread entry click → update sidebar + scroll to that row in SVG
         panelBody.querySelectorAll('.thread-msg').forEach(tm => {
           tm.addEventListener('click', (e) => {
             e.stopPropagation();
             const rowIdx = tm.dataset.scrollRow;
             const target = document.querySelector('.evt-row[data-row="' + rowIdx + '"]');
             if (target) {
+              target.dispatchEvent(new Event('click', { bubbles: true }));
               target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              // Brief highlight flash
               const bg = target.querySelector('.row-bg');
               if (bg) {
                 bg.style.fill = 'rgba(59, 130, 246, 0.12)';
-                setTimeout(() => { bg.style.fill = 'transparent'; }, 1200);
+                setTimeout(() => { bg.style.fill = 'transparent'; }, 3000);
               }
             }
           });
