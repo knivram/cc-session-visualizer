@@ -72,8 +72,7 @@ function renderPhaseSvg(phase: Phase): string {
 
   // Background
   lines.push(
-    `<rect width="${width}" height="${height}" fill="#ffffff" rx="8"/>` +
-    `<rect width="${width}" height="${height}" fill="none" stroke="#e5e7eb" stroke-width="1" rx="8"/>`
+    `<rect width="${width}" height="${height}" fill="#ffffff"/>`
   );
 
   // Header: participant boxes
@@ -379,8 +378,10 @@ export function renderHtml(session: Session): string {
   .diagram-container {
     overflow-x: auto;
     border-radius: 8px;
-    border: 1px solid #f0f0f0;
+    border: 1px solid #e5e7eb;
     background: #ffffff;
+    display: inline-block;
+    max-width: 100%;
   }
   .diagram-container svg { display: block; }
 
