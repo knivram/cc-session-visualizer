@@ -713,6 +713,9 @@ ${phaseSections}
         html += '<span class="direction">' + esc(from) + ' \\u2192 ' + esc(to) + '</span>';
         html += '<span class="msg-badge ' + badgeClass + '">' + badgeLabel + '</span>';
         html += '</div>';
+        if (detail.summary) {
+          html += '<div style="font-size: 13px; color: #374151; font-weight: 500; font-style: italic; margin: 8px 0 12px;">' + esc(detail.summary) + '</div>';
+        }
         html += field('Timestamp', ts);
         if (detail.content) {
           html += field('Content', detail.content);
