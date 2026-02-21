@@ -137,9 +137,9 @@ function renderPhaseSvg(phase: Phase): string {
 
     // Timestamp label on far left
     const timeStr = evt.timestamp.slice(11, 19); // HH:MM:SS
-    const tsOpacity = isMsg ? "1" : "0.6";
+    const tsOpacity = isMsg ? "1" : "0.7";
     lines.push(
-      `<text x="4" y="${arrowY + 4}" fill="#9ca3af" opacity="${tsOpacity}" font-family="'SF Mono', 'Cascadia Code', 'Fira Code', monospace" font-size="9">${timeStr}</text>`
+      `<text x="12" y="${arrowY + 4}" fill="#6b7280" opacity="${tsOpacity}" font-family="'SF Mono', 'Cascadia Code', 'Fira Code', monospace" font-size="10">${timeStr}</text>`
     );
 
     const color = ARROW_COLORS[evt.type] ?? "#9ca3af";
@@ -514,7 +514,7 @@ export function renderHtml(session: Session): string {
   }
 
   /* Dimmed rows when filter is active */
-  .evt-row.dimmed { opacity: 0.12; pointer-events: none; }
+  .evt-row.dimmed { opacity: 0.35; }
 
   /* ── Conversation thread in detail panel ─────────────────── */
   .msg-detail-header {
