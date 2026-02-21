@@ -116,7 +116,7 @@ function renderPhaseSvg(phase: Phase): string {
     // Encode detail as data attribute
     const detailJson = escHtml(JSON.stringify(evt.detail));
     const groupAttrs =
-      `class="evt-row" data-type="${evt.type}" data-row="${row}" ` +
+      `class="evt-row" data-type="${evt.type}" data-row="${row}" data-row-h="${rowH}" data-base-y="${y}" ` +
       `data-detail="${detailJson}" ` +
       `data-from="${escHtml(evt.from)}" data-to="${escHtml(evt.to)}" ` +
       `data-ts="${escHtml(evt.timestamp)}" ` +
@@ -330,10 +330,16 @@ export function renderHtml(session: Session): string {
     display: flex;
     align-items: center;
     gap: 7px;
-    transition: color 0.15s ease;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease, opacity 0.15s ease;
   }
   .legend-item:hover {
     color: #374151;
+  }
+  .legend-item:not(.active) {
+    opacity: 0.35;
+    text-decoration: line-through;
   }
   .legend-dot {
     width: 14px;
@@ -607,11 +613,11 @@ export function renderHtml(session: Session): string {
 </header>
 
 <div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#059669"></div> Spawn</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div> Result</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Message</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Shutdown</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div> Team op</div>
+  <div class="legend-item active" data-filter-type="spawn"><div class="legend-dot" style="background:#059669"></div> Spawn</div>
+  <div class="legend-item active" data-filter-type="result"><div class="legend-dot" style="background:#2563eb"></div> Result</div>
+  <div class="legend-item active" data-filter-type="message"><div class="legend-dot" style="background:#d97706"></div> Message</div>
+  <div class="legend-item active" data-filter-type="shutdown"><div class="legend-dot" style="background:#dc2626"></div> Shutdown</div>
+  <div class="legend-item active" data-filter-type="team_create,team_delete"><div class="legend-dot" style="background:#7c3aed"></div> Team op</div>
 </div>
 
 <main>
@@ -652,6 +658,57 @@ ${phaseSections}
   function field(label, value) {
     return '<div class="detail-field"><div class="label">' + esc(label) + '</div><div class="value">' + esc(value) + '</div></div>';
   }
+
+  // ── Legend type filter ──
+  const hiddenTypes = new Set();
+  const HEADER_H = ${HEADER_H};
+  const PAD_Y = ${PAD_Y};
+
+  function applyTypeFilter() {
+    document.querySelectorAll('.diagram-container').forEach(container => {
+      const svg = container.querySelector('svg');
+      if (!svg) return;
+      const rows = Array.from(svg.querySelectorAll('.evt-row'));
+      let accY = HEADER_H;
+
+      rows.forEach(r => {
+        const type = r.dataset.type;
+        const hidden = hiddenTypes.has(type);
+        const rowH = parseFloat(r.dataset.rowH);
+        const baseY = parseFloat(r.dataset.baseY);
+
+        if (hidden) {
+          r.style.display = 'none';
+        } else {
+          r.style.display = '';
+          const newY = accY + rowH / 2;
+          const shift = newY - baseY;
+          r.setAttribute('transform', 'translate(0,' + shift + ')');
+          accY += rowH;
+        }
+      });
+
+      // Resize SVG height
+      const newHeight = accY + PAD_Y * 2 + 30;
+      svg.setAttribute('height', newHeight);
+      svg.setAttribute('viewBox', '0 0 ' + svg.getAttribute('width') + ' ' + newHeight);
+
+      // Update lifelines
+      svg.querySelectorAll('line[stroke-dasharray="6,4"]').forEach(line => {
+        line.setAttribute('y2', newHeight - PAD_Y);
+      });
+    });
+  }
+
+  document.querySelectorAll('.legend-item[data-filter-type]').forEach(item => {
+    item.addEventListener('click', () => {
+      const types = item.dataset.filterType.split(',');
+      item.classList.toggle('active');
+      const isActive = item.classList.contains('active');
+      types.forEach(t => isActive ? hiddenTypes.delete(t) : hiddenTypes.add(t));
+      applyTypeFilter();
+    });
+  });
 
   // ── Build conversation thread index ──
   const threads = {};
