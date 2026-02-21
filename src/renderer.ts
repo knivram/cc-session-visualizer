@@ -8,12 +8,12 @@ const HEADER_H = 80;
 const PAD_X = 40;
 const PAD_Y = 20;
 const ARROW_COLORS: Record<string, string> = {
-  spawn: "#4ade80",
-  result: "#60a5fa",
-  message: "#fb923c",
-  shutdown: "#f87171",
-  team_create: "#a78bfa",
-  team_delete: "#a78bfa",
+  spawn: "#059669",
+  result: "#2563eb",
+  message: "#d97706",
+  shutdown: "#dc2626",
+  team_create: "#7c3aed",
+  team_delete: "#7c3aed",
 };
 
 // ── SVG generation ───────────────────────────────────────────────────
@@ -41,7 +41,7 @@ function renderPhaseSvg(phase: Phase): string {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
   );
 
-  // Defs: arrowhead markers
+  // Defs: arrowhead markers + subtle shadow filter
   lines.push("<defs>");
   for (const [type, color] of Object.entries(ARROW_COLORS)) {
     lines.push(
@@ -50,11 +50,18 @@ function renderPhaseSvg(phase: Phase): string {
         `</marker>`
     );
   }
+  // Subtle drop shadow for participant boxes
+  lines.push(
+    `<filter id="box-shadow" x="-4%" y="-4%" width="108%" height="116%">` +
+      `<feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000" flood-opacity="0.06"/>` +
+    `</filter>`
+  );
   lines.push("</defs>");
 
   // Background
   lines.push(
-    `<rect width="${width}" height="${height}" fill="#1e293b" rx="8"/>`
+    `<rect width="${width}" height="${height}" fill="#ffffff" rx="8"/>` +
+    `<rect width="${width}" height="${height}" fill="none" stroke="#e5e7eb" stroke-width="1" rx="8"/>`
   );
 
   // Header: participant boxes
@@ -63,16 +70,16 @@ function renderPhaseSvg(phase: Phase): string {
     const agent = agents[i];
     const boxW = COL_W - 20;
     lines.push(
-      `<rect x="${x - boxW / 2}" y="${PAD_Y}" width="${boxW}" height="48" rx="6" ` +
-        `fill="${agent.type === 'host' ? '#334155' : '#1e3a5f'}" stroke="#475569" stroke-width="1"/>`
+      `<rect x="${x - boxW / 2}" y="${PAD_Y}" width="${boxW}" height="48" rx="8" ` +
+        `fill="#ffffff" stroke="${agent.type === 'host' ? '#d1d5db' : '#bfdbfe'}" stroke-width="1" filter="url(#box-shadow)"/>`
     );
     lines.push(
-      `<text x="${x}" y="${PAD_Y + 20}" text-anchor="middle" fill="#e2e8f0" ` +
-        `font-family="monospace" font-size="12" font-weight="bold">${escHtml(agent.name)}</text>`
+      `<text x="${x}" y="${PAD_Y + 20}" text-anchor="middle" fill="#111827" ` +
+        `font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="12" font-weight="600">${escHtml(agent.name)}</text>`
     );
     lines.push(
-      `<text x="${x}" y="${PAD_Y + 36}" text-anchor="middle" fill="#94a3b8" ` +
-        `font-family="monospace" font-size="10">${escHtml(agent.type)}</text>`
+      `<text x="${x}" y="${PAD_Y + 36}" text-anchor="middle" fill="#6b7280" ` +
+        `font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="10" font-weight="400">${escHtml(agent.type)}</text>`
     );
   }
 
@@ -81,7 +88,7 @@ function renderPhaseSvg(phase: Phase): string {
     const x = PAD_X + i * COL_W + COL_W / 2;
     lines.push(
       `<line x1="${x}" y1="${HEADER_H}" x2="${x}" y2="${height - PAD_Y}" ` +
-        `stroke="#475569" stroke-width="1" stroke-dasharray="6,4"/>`
+        `stroke="#e5e7eb" stroke-width="1" stroke-dasharray="6,4"/>`
     );
   }
 
@@ -113,10 +120,10 @@ function renderPhaseSvg(phase: Phase): string {
     // Timestamp label on far left
     const timeStr = evt.timestamp.slice(11, 19); // HH:MM:SS
     lines.push(
-      `<text x="4" y="${y + 4}" fill="#64748b" font-family="monospace" font-size="9">${timeStr}</text>`
+      `<text x="4" y="${y + 4}" fill="#9ca3af" font-family="'SF Mono', 'Cascadia Code', 'Fira Code', monospace" font-size="9">${timeStr}</text>`
     );
 
-    const color = ARROW_COLORS[evt.type] ?? "#94a3b8";
+    const color = ARROW_COLORS[evt.type] ?? "#9ca3af";
 
     if (fromCol !== undefined && toCol !== undefined) {
       if (fromCol === toCol) {
@@ -124,11 +131,11 @@ function renderPhaseSvg(phase: Phase): string {
         const x = PAD_X + fromCol * COL_W + COL_W / 2;
         lines.push(
           `<path d="M ${x} ${y} C ${x + 40} ${y - 15}, ${x + 40} ${y + 15}, ${x} ${y}" ` +
-            `fill="none" stroke="${color}" stroke-width="2"/>`
+            `fill="none" stroke="${color}" stroke-width="1.5"/>`
         );
         lines.push(
           `<text x="${x + 45}" y="${y + 4}" fill="${color}" ` +
-            `font-family="monospace" font-size="11">${escHtml(evt.label)}</text>`
+            `font-family="'SF Mono', 'Cascadia Code', 'Fira Code', monospace" font-size="11">${escHtml(evt.label)}</text>`
         );
       } else {
         // Arrow between columns
@@ -140,14 +147,14 @@ function renderPhaseSvg(phase: Phase): string {
 
         lines.push(
           `<line x1="${ax1}" y1="${y}" x2="${ax2}" y2="${y}" ` +
-            `stroke="${color}" stroke-width="2" marker-end="url(#ah-${evt.type})"/>`
+            `stroke="${color}" stroke-width="1.5" marker-end="url(#ah-${evt.type})"/>`
         );
 
         // Label above arrow
         const midX = (ax1 + ax2) / 2;
         lines.push(
           `<text x="${midX}" y="${y - 8}" text-anchor="middle" fill="${color}" ` +
-            `font-family="monospace" font-size="11">${escHtml(evt.label)}</text>`
+            `font-family="'SF Mono', 'Cascadia Code', 'Fira Code', monospace" font-size="11">${escHtml(evt.label)}</text>`
         );
       }
     }
@@ -187,90 +194,162 @@ export function renderHtml(session: Session): string {
 <title>Session ${escHtml(session.id.slice(0, 8))}</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
-    background: #0f172a;
-    color: #e2e8f0;
-    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    background: #f8f9fa;
+    color: #1f2937;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  /* ── Header ────────────────────────────────────────────── */
   header {
-    background: #1e293b;
-    border-bottom: 1px solid #334155;
-    padding: 20px 32px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 24px 40px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
   header h1 {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
-    color: #f1f5f9;
+    color: #111827;
+    letter-spacing: -0.01em;
   }
   header .meta {
     display: flex;
-    gap: 24px;
+    gap: 28px;
     margin-top: 8px;
-    color: #94a3b8;
+    color: #6b7280;
     font-size: 13px;
   }
-  header .meta span { white-space: nowrap; }
-  main { padding: 24px 32px; max-width: 100%; }
+  header .meta span {
+    white-space: nowrap;
+  }
+  header .meta span::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    background: #d1d5db;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  header .meta span:first-child::before {
+    display: none;
+  }
+
+  /* ── Legend ─────────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    gap: 24px;
+    padding: 12px 40px;
+    background: #ffffff;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: color 0.15s ease;
+  }
+  .legend-item:hover {
+    color: #374151;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  /* ── Main ───────────────────────────────────────────────── */
+  main {
+    padding: 32px 40px;
+    max-width: 100%;
+  }
+
+  /* ── Phase cards ────────────────────────────────────────── */
   .phase {
-    background: #1e293b;
+    background: #ffffff;
     border-radius: 12px;
-    padding: 20px;
+    padding: 24px;
     margin-bottom: 24px;
-    border: 1px solid #334155;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    transition: box-shadow 0.2s ease;
+  }
+  .phase:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
   }
   .phase h2 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
-    color: #f1f5f9;
-    margin-bottom: 4px;
+    color: #111827;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
   }
   .phase-meta {
-    color: #64748b;
+    color: #9ca3af;
     font-size: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    letter-spacing: 0.01em;
   }
+
+  /* ── Diagram ────────────────────────────────────────────── */
   .diagram-container {
     overflow-x: auto;
     border-radius: 8px;
+    border: 1px solid #f0f0f0;
+    background: #ffffff;
   }
   .diagram-container svg { display: block; }
 
   /* Hover effect on event rows */
-  .evt-row .row-bg { transition: fill 0.15s; }
-  .evt-row:hover .row-bg { fill: rgba(148, 163, 184, 0.08); }
+  .evt-row .row-bg { transition: fill 0.15s ease; }
+  .evt-row:hover .row-bg { fill: rgba(59, 130, 246, 0.04); }
 
-  /* Detail panel */
+  /* ── Detail panel ───────────────────────────────────────── */
   #detail-panel {
     position: fixed;
     top: 0;
-    right: -440px;
-    width: 440px;
+    right: -480px;
+    width: 480px;
     height: 100vh;
-    background: #1e293b;
-    border-left: 1px solid #334155;
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
     overflow-y: auto;
-    transition: right 0.25s ease;
+    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 100;
-    box-shadow: -4px 0 20px rgba(0,0,0,0.4);
+    box-shadow: -8px 0 30px rgba(0,0,0,0.08);
   }
   #detail-panel.open { right: 0; }
+
   #detail-panel .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #334155;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
     position: sticky;
     top: 0;
-    background: #1e293b;
+    background: #ffffff;
+    z-index: 1;
   }
-  #detail-panel .panel-header h3 { font-size: 14px; color: #f1f5f9; }
+  #detail-panel .panel-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: 0.04em;
+  }
   #detail-panel .close-btn {
     background: none;
-    border: 1px solid #475569;
-    color: #94a3b8;
+    border: 1px solid #e5e7eb;
+    color: #9ca3af;
     width: 28px;
     height: 28px;
     border-radius: 6px;
@@ -279,51 +358,64 @@ export function renderHtml(session: Session): string {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.15s ease;
   }
-  #detail-panel .close-btn:hover { background: #334155; color: #e2e8f0; }
-  #detail-panel .panel-body { padding: 16px 20px; }
+  #detail-panel .close-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+  }
+  #detail-panel .panel-body { padding: 20px 24px; }
+
   .detail-field {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
   .detail-field .label {
     font-size: 11px;
-    color: #64748b;
+    color: #9ca3af;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    margin-bottom: 4px;
   }
   .detail-field .value {
-    color: #e2e8f0;
+    color: #1f2937;
     font-size: 13px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
     white-space: pre-wrap;
     word-break: break-word;
-    background: #0f172a;
-    padding: 8px 10px;
-    border-radius: 6px;
+    background: #f8f9fa;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
     max-height: 300px;
     overflow-y: auto;
+    line-height: 1.5;
   }
 
-  /* Legend */
-  .legend {
-    display: flex;
-    gap: 20px;
-    padding: 12px 32px;
-    background: #1e293b;
-    border-bottom: 1px solid #334155;
-    font-size: 12px;
+  /* ── Backdrop overlay when panel is open ────────────────── */
+  #panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.08);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
   }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #94a3b8;
+  #panel-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
   }
-  .legend-dot {
-    width: 12px;
-    height: 3px;
-    border-radius: 2px;
-  }
+
+  /* ── Scrollbar styling ──────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+  /* ── Selection color ────────────────────────────────────── */
+  ::selection { background: rgba(59, 130, 246, 0.15); }
 </style>
 </head>
 <body>
@@ -339,16 +431,18 @@ export function renderHtml(session: Session): string {
 </header>
 
 <div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Spawn</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Result</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div> Message</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> Shutdown</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> Team op</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#059669"></div> Spawn</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div> Result</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Message</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Shutdown</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div> Team op</div>
 </div>
 
 <main>
 ${phaseSections}
 </main>
+
+<div id="panel-backdrop"></div>
 
 <aside id="detail-panel">
   <div class="panel-header">
@@ -364,10 +458,17 @@ ${phaseSections}
   const panelBody = document.getElementById('panel-body');
   const panelTitle = document.getElementById('panel-title');
   const closeBtn = document.getElementById('close-panel');
+  const backdrop = document.getElementById('panel-backdrop');
 
-  closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+  function closePanel() {
+    panel.classList.remove('open');
+    backdrop.classList.remove('visible');
+  }
+
+  closeBtn.addEventListener('click', closePanel);
+  backdrop.addEventListener('click', closePanel);
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') panel.classList.remove('open');
+    if (e.key === 'Escape') closePanel();
   });
 
   document.querySelectorAll('.evt-row').forEach(g => {
@@ -397,6 +498,7 @@ ${phaseSections}
 
       panelBody.innerHTML = html;
       panel.classList.add('open');
+      backdrop.classList.add('visible');
     });
   });
 
